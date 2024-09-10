@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>中文投资计算器</title>
+    <title>投资计算器</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
     <style>
         body {
@@ -50,7 +50,7 @@
     </style>
 </head>
 <body>
-    <h1>中文投资计算器</h1>
+    <h1>投资计算器</h1>
     <div class="input-group">
         <label for="initialInvestment">初始投资金额 (￥):</label>
         <input type="number" id="initialInvestment" min="0" step="100" value="10000">
@@ -87,12 +87,23 @@
 
             let totalAmount = initialInvestment;
             let investmentData = [{x: 0, y: initialInvestment}];
+            
+            // 标普500的估算年化回报率（使用历史平均值约10%）
+            const sp500AnnualReturn = 0.10;
+            const sp500MonthlyRate = sp500AnnualReturn / 12;
+            let sp500Amount = initialInvestment;
+            let sp500Data = [{x: 0, y: initialInvestment}];
 
             for (let i = 1; i <= totalMonths; i++) {
                 totalAmount += monthlyContribution;
                 totalAmount *= (1 + monthlyRate);
+
+                sp500Amount += monthlyContribution;
+                sp500Amount *= (1 + sp500MonthlyRate);
+
                 if (i % 12 === 0) {
                     investmentData.push({x: i / 12, y: totalAmount});
+                    sp500Data.push({x: i / 12, y: sp500Amount});
                 }
             }
 
@@ -102,13 +113,14 @@
             document.getElementById('result').innerHTML = `
                 投资总额: ￥${totalAmount.toFixed(2)}<br>
                 总投入: ￥${totalContributions.toFixed(2)}<br>
-                总收益: ￥${totalEarnings.toFixed(2)}
+                总收益: ￥${totalEarnings.toFixed(2)}<br>
+                对比标普500: ￥${sp500Amount.toFixed(2)}
             `;
 
-            updateChart(investmentData);
+            updateChart(investmentData, sp500Data);
         }
 
-        function updateChart(investmentData) {
+        function updateChart(investmentData, sp500Data) {
             const ctx = document.getElementById('investmentChart').getContext('2d');
             
             if (myChart) {
@@ -119,9 +131,15 @@
                 type: 'line',
                 data: {
                     datasets: [{
-                        label: '投资总额',
+                        label: '您的投资',
                         data: investmentData,
                         borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    },
+                    {
+                        label: '标普500参考',
+                        data: sp500Data,
+                        borderColor: 'rgb(255, 99, 132)',
                         tension: 0.1
                     }]
                 },
@@ -146,7 +164,7 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: '投资增长趋势'
+                            text: '投资增长趋势（与标普500对比）'
                         }
                     }
                 }
